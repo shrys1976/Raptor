@@ -1,3 +1,4 @@
+from audioop import reverse
 import numpy as np
 
 # Tensor core, fundamental graph node
@@ -16,5 +17,26 @@ class Tensor:
 
     def __repr__(self):
         return f"Tensor(data = {self.data}, grad ={self.grad})"
-               
+
+
+    def backward(self):
+
+        topo = []
+        visited = set()
+
+
+        def build(node):
+            if node not in visited:
+                visited.add(node)
+                for child in node._prev:
+                    build(child)
+                topo.append(node)
+
+        build(self)             
+
+        #grad = 1
+        self.grad = np.ones_like(self.data, dtype = np.float32)
+
+        for node in reversed(topo):
+            node._backward()           
 
