@@ -18,7 +18,9 @@ class Tensor:
     def __repr__(self):
         return f"Tensor(data = {self.data}, grad ={self.grad})"
 
-
+#topological backward pass 
+#starts from output tensor, visit all ancestors
+#call each node's backward rule (_backward) in rev topoligical order
     def backward(self):
 
         topo = []
@@ -40,3 +42,62 @@ class Tensor:
         for node in reversed(topo):
             node._backward()           
 
+
+
+    def __add__(self,other):
+        other = other if isinstance(other, Tensor)else Tensor(other, requires_grad=False)
+
+        out = Tensor(
+
+            self.data+other.data,
+            (self,other),
+            '+',
+            self.requires_grad or other.requires_grad,
+        )
+
+        def _backward():
+            if self.requires_grad: self.grad +=out.grad
+            if other.requires_grad: other.grad += out.grad
+
+            out._backward = _backward
+            return out
+
+
+    def __mul__(self,other):
+
+        other = other if isinstance(other,Tensor) else Tensor(other,requires_grad=False)
+
+        out = Tensor(
+
+            self.data*other.data,
+            (self,other),
+            '*',
+            self.requires_grad or other.requires_grad,
+        )
+
+        def _backward():
+            if self.requires_grad:
+                self.grad+= other.data * out.grad
+            if other.requires_grad:
+                other.grad += self.data  * out.grad 
+
+            out._backward = _backward
+            return out    
+
+
+    def __rmul__(self,other):
+        return self*other
+
+
+
+    def __radd__(self,other):
+        return self+other
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __neg__(self,other):
+        return self*-1
+
+    def __rsub__(self,other):
+        return other +(-self)                                
