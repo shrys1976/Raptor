@@ -232,3 +232,67 @@ class Tensor:
                 grad = grad.sum(axis = i, keepdims =  True)
 
         return grad                                
+
+
+    def mean(self, axis = None, keepdims = False):
+        if axis is None:
+            denom = self.data.size        
+        else:
+            if isinstance(axis,int):
+                axes = (axis,)
+            else:
+                axes = axis
+
+            denom =1 
+            for ax in axes:
+                denom *= self.data.shape[ax]
+
+        return self.sum(axis = axis, keepdims = keepdims)/denom      
+
+
+#in backward, reshape incoming grad shape back to org input shape
+
+    def reshape(self,*shape):
+        out = Tensor(
+
+            self.data.reshape(*shape),
+            (self,),
+            "reshape",
+            self.requires_grad
+
+        )                             
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += out.grad.reshape(self.data.shape)
+
+        out._backward = _backward
+        return out        
+
+
+
+# permute axes (2, 3) -> (3, 2)
+# backward must map gradient position back to where they came from
+
+
+    def transpose(self, *axes):
+        if len(axes)==0:# if axis not stated, numpy reverses them
+            axes = tuple(reversed(range(self.data.ndim)))
+
+        out = Tensor(
+
+            self.data.transpose(*axes),
+            (self,),
+            "transposes",
+            self.requires_grad,
+        )    
+
+
+        def _backward():
+            if self.requires_grad:
+                inverse_axes = np.argsort(axes)
+                self.grad += out.grad.transpose(*inverse_axes)
+
+        out._backward = _backward
+        return out        
+
