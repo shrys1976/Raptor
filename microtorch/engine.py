@@ -57,8 +57,10 @@ class Tensor:
 
         def _backward():
             if self.requires_grad: 
+                #grad_self = self.data + other.data
                 self.grad += Tensor._unbroadcast(out.grad, self.data.shape)
             if other.requires_grad: 
+               # grad_other = self.data + other.data
                 other.grad +=Tensor._unbroadcast(out.grad, other.data.shape)
 
         out._backward = _backward
@@ -84,7 +86,7 @@ class Tensor:
                 self.grad+=Tensor._unbroadcast(grad_self, self.data.shape)
             if other.requires_grad:
                 grad_other = self.data * out.grad
-                self.grad ++ Tensor._unbroadcast(grad_other, other.data.shape) 
+                self.grad += Tensor._unbroadcast(grad_other, other.data.shape) 
 
         out._backward = _backward
         return out    
