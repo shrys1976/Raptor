@@ -59,8 +59,8 @@ class Tensor:
             if self.requires_grad: self.grad +=out.grad
             if other.requires_grad: other.grad += out.grad
 
-            out._backward = _backward
-            return out
+        out._backward = _backward
+        return out
 
 
     def __mul__(self,other):
@@ -81,13 +81,12 @@ class Tensor:
             if other.requires_grad:
                 other.grad += self.data  * out.grad 
 
-            out._backward = _backward
-            return out    
+        out._backward = _backward
+        return out    
 
 
     def __rmul__(self,other):
         return self*other
-
 
 
     def __radd__(self,other):
@@ -96,7 +95,7 @@ class Tensor:
     def __sub__(self, other):
         return self + (-other)
 
-    def __neg__(self,other):
+    def __neg__(self):
         return self*-1
 
     def __rsub__(self,other):
@@ -125,7 +124,7 @@ class Tensor:
         return out
 
 
-    def _rtruediv_(self, other):
+    def __rtruediv__(self, other):
         
          other  = other if isinstance(other,Tensor) else Tensor(other, requires_grad = False)       
          return other/self
@@ -176,19 +175,19 @@ class Tensor:
                     if isinstance(axis,int):
                         axes = (axis,)
                     else:
-                        axes = (axis)
+                        axes = axis
 
                     for ax in sorted(axes):
                         grad = np.expand_dims(grad,ax)
 
                 self.grad += np.ones_like(self.data)*grad 
 
-            out._backward = _backward
-            return out                                                                              
+        out._backward = _backward
+        return out                                                                              
 
 
 
-        def __matmul__(self, other):
+    def __matmul__(self, other):
         
             other = other if isinstance(other, Tensor) else Tensor(other,requires_grad=False)
 
@@ -208,4 +207,4 @@ class Tensor:
                     other.grad+= self.data.T @ out.grad    
 
             out._backward = _backward
-            return out        
+            return out           
