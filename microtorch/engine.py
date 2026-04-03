@@ -1,4 +1,4 @@
-from audioop import reverse
+
 import numpy as np
 
 # Tensor core, fundamental graph node
@@ -100,4 +100,112 @@ class Tensor:
         return self*-1
 
     def __rsub__(self,other):
-        return other +(-self)                                
+        return other +(-self)
+
+
+    def __truediv__(self, other):
+        other  = other if isinstance(other,Tensor) else Tensor(other, requires_grad = False)       
+
+        out = Tensor(
+
+            self.data/other.data,
+            (self, other),
+            '/',
+            self.requires_grad or other.requires_grad,
+        )                                 
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += (1.0/other.data)*out.grad
+
+            if other.requires_grad:
+                other.grad += (-self.data/(other.data**2))*out.grad
+
+        out._backward = _backward
+        return out
+
+
+    def _rtruediv_(self, other):
+        
+         other  = other if isinstance(other,Tensor) else Tensor(other, requires_grad = False)       
+         return other/self
+
+
+
+    def __pow__(self,power):
+        assert isinstance(power,(int, float)), "only scalar powers supported"
+
+        out = Tensor(
+
+            self.data ** power,
+            (self,),
+            f"**{power}",
+            self.requires_grad,
+        )
+
+        def _backward():
+            if self.requires_grad:
+                self.grad += (power*(self.data ** (power-1)))*out.grad
+
+
+        out._backward  = _backward
+        return out                
+
+
+
+    def sum(self, axis =None, keepdims  =  False): # performs on all axes, dims are not retained after op
+        out = Tensor(
+
+            self.data.sum(axis = axis, keepdims = keepdims),
+            (self,),
+            "sum",
+            self.requires_grad,
+        )         
+
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+
+            if axis is None:
+                self.grad += np.ones_like(self.data)*grad
+
+            else:
+                if not keepdims:
+                    if isinstance(axis,int):
+                        axes = (axis,)
+                    else:
+                        axes = (axis)
+
+                    for ax in sorted(axes):
+                        grad = np.expand_dims(grad,ax)
+
+                self.grad += np.ones_like(self.data)*grad 
+
+            out._backward = _backward
+            return out                                                                              
+
+
+
+        def __matmul__(self, other):
+        
+            other = other if isinstance(other, Tensor) else Tensor(other,requires_grad=False)
+
+
+            out = Tensor(
+
+                self.data @ other.data,
+                (self, other),
+                '@',
+                self.requires_grad or other.requires_grad,
+            )     
+
+            def _backward():
+                if self.requires_grad:
+                    self.grad+= out.grad @ other.data.T
+                if other.requires_grad:
+                    other.grad+= self.data.T @ out.grad    
+
+            out._backward = _backward
+            return out        
