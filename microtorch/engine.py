@@ -56,8 +56,10 @@ class Tensor:
         )
 
         def _backward():
-            if self.requires_grad: self.grad +=out.grad
-            if other.requires_grad: other.grad += out.grad
+            if self.requires_grad: 
+                self.grad += Tensor._unbroadcast(out.grad, self.data.shape)
+            if other.requires_grad: 
+                other.grad +=Tensor._unbroadcast(out.grad, other.data.shape)
 
         out._backward = _backward
         return out
@@ -77,9 +79,12 @@ class Tensor:
 
         def _backward():
             if self.requires_grad:
-                self.grad+= other.data * out.grad
+                grad_self = other.data * out.grad
+               
+                self.grad+=Tensor._unbroadcast(grad_self, self.data.shape)
             if other.requires_grad:
-                other.grad += self.data  * out.grad 
+                grad_other = self.data * out.grad
+                self.grad ++ Tensor._unbroadcast(grad_other, other.data.shape) 
 
         out._backward = _backward
         return out    
@@ -115,10 +120,12 @@ class Tensor:
 
         def _backward():
             if self.requires_grad:
-                self.grad += (1.0/other.data)*out.grad
+                grad_self =  (1.0/other.data)*out.grad
+                self.grad += Tensor._unbroadcast(grad_self, self.data.shape)
 
             if other.requires_grad:
-                other.grad += (-self.data/(other.data**2))*out.grad
+                grad_other =  (-self.data/(other.data**2))*out.grad
+                other.grad += Tensor._unbroadcast(grad_other, other.data.shape)
 
         out._backward = _backward
         return out
@@ -208,3 +215,18 @@ class Tensor:
 
             out._backward = _backward
             return out           
+
+
+    # helper to undo broadcasting while calculating the backprop gradient
+    # converts the tensor shape back to what it was before broadcasting during forward pass
+    @staticmethod
+    def _unbroadcast(grad, shape):
+        while len(grad.shape)> len(shape): # check if grad has more dim than shape
+                                            # means that broadcasting inserted dims to the left
+            grad = grad.sum(axis= 0)
+
+        for i, dim in enumerate(shape):
+            if dim == 1 :# sum across dims where org shape had 1
+                grad = grad.sum(axis = i, keepdims =  True)
+
+        return grad                                
