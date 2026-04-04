@@ -89,7 +89,7 @@ class Sequential(Module):
 class MSELoss(Module):
     def forward(self, pred, target):
         diff = pred - target
-        return (diff*diff).mean # mean sqaured error
+        return (diff*diff).mean() # mean sqaured error
 
 
 class CrossEntropyLoss(Module):
@@ -100,7 +100,7 @@ class CrossEntropyLoss(Module):
 
 
         batch_size = logits.data.shape[0]
-        loss_data= -np.log(probs[np.arrange(batch_size),target])
+        loss_data= -np.log(probs[np.arange(batch_size),target])
 
         out=  Tensor( 
             loss_data.mean(),
@@ -113,9 +113,9 @@ class CrossEntropyLoss(Module):
         def _backward():
             if logits.requires_grad:
                 grad = probs.copy()
-                grad[np.arrange(batch_size),target] -=1.0
+                grad[np.arange(batch_size),target] -=1.0
                 grad =grad/batch_size
-                logits.grad += grad*out.grad
+                logits.grad += grad* out.grad
 
         out._backward = _backward
         return out                
