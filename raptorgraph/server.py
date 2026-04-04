@@ -5,6 +5,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from raptor import Tensor, nn
 from raptor.ops import relu, sigmoid, tanh
@@ -17,6 +18,11 @@ tracer = GraphTracer()
 _graph_lock = Lock()
 _current_graph = None
 _saved_graphs = {}
+
+
+class GraphRegistration(BaseModel):
+    name: str
+    graph: dict
 
 
 def _set_graph(graph):
@@ -81,6 +87,17 @@ def set_current_tensor(output_tensor, name="custom", persist=True):
     graph["graph_type"] = "custom"
     if persist:
         _save_graph(graph_id, graph)
+    _set_graph(graph)
+    return graph
+
+
+def register_graph_payload(name, graph_payload):
+    graph = dict(graph_payload)
+    graph_id = f"custom:{name}"
+    graph["name"] = name
+    graph["graph_id"] = graph_id
+    graph["graph_type"] = "custom"
+    _save_graph(graph_id, graph)
     _set_graph(graph)
     return graph
 
@@ -206,3 +223,8 @@ def api_activate_graph(graph_id: str):
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=f"Unknown graph: {graph_id}") from exc
     return graph
+
+
+@app.post("/api/graphs/register")
+def api_register_graph(payload: GraphRegistration):
+    return register_graph_payload(payload.name, payload.graph)
