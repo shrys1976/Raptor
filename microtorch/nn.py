@@ -56,15 +56,13 @@ class Linear(Module):
         )        
 
     def forward(self,x):
-        out - x @ self.weight.transpose()
+        out = x @ self.weight.transpose()
 
 
         if self.bias is not None:
             out = out + self.bias
 
         return out       
-
-
 
 class ReLU(Module):
     def forward(self,x):
@@ -79,3 +77,14 @@ class Sigmoid(Module):
 class Tanh(Module):
     def forward(self, x):
         return ops.tanh(x)
+
+class Sequential(Module):
+    def __init__(self, *layers):
+        self.layers = layers
+
+    def forward(self,x):
+        for layer in self.layers:
+            x = layer(x)
+        return x    
+
+
