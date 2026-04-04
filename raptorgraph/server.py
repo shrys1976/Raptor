@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from raptor import Tensor, nn
 from raptor.ops import relu, sigmoid, tanh
+from raptor.utils import load_mnist
 from raptorgraph.tracer import GraphTracer
 
 
@@ -58,9 +59,28 @@ def _demo_mlp():
     return loss
 
 
+def _demo_mnist_loss():
+    np.random.seed(11)
+    X_train, y_train, _, _ = load_mnist()
+
+    model = nn.Sequential(
+        nn.Linear(784, 64),
+        nn.ReLU(),
+        nn.Linear(64, 10),
+    )
+
+    x = Tensor(X_train[:2], requires_grad=False)
+    labels = y_train[:2]
+    logits = model(x)
+    loss = nn.CrossEntropyLoss()(logits, labels)
+    loss.backward()
+    return loss
+
+
 DEMO_BUILDERS = {
     "arithmetic": _demo_arithmetic,
     "mlp": _demo_mlp,
+    "mnist_loss": _demo_mnist_loss,
 }
 
 
