@@ -7,49 +7,22 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <div class="page-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="eyebrow">Visualizer</div>
-        <h1>RaptorGraph</h1>
-        <p>Inspect tensor graphs traced from your `raptor` engine.</p>
+  <main class="workspace">
+    <header class="top-strip">
+      <div class="top-strip__title">RaptorGraph</div>
+      <div class="top-strip__stats">
+        <span class="stat-pill">name <strong id="meta-name">-</strong></span>
+        <span class="stat-pill">nodes <strong id="meta-nodes">-</strong></span>
+        <span class="stat-pill">edges <strong id="meta-edges">-</strong></span>
+        <span class="stat-pill stat-pill--status" id="status-banner">Loading graph...</span>
       </div>
+    </header>
 
-      <section class="panel">
-        <h2>Controls</h2>
-        <div class="button-row">
-          <button id="refresh-btn">Refresh Graph</button>
-        </div>
-        <div class="button-column">
-          <button class="demo-btn" data-demo="arithmetic">Load Arithmetic Demo</button>
-          <button class="demo-btn" data-demo="mlp">Load MLP Demo</button>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Graph Stats</h2>
-        <dl id="graph-meta" class="meta-list">
-          <div><dt>Name</dt><dd id="meta-name">-</dd></div>
-          <div><dt>Nodes</dt><dd id="meta-nodes">-</dd></div>
-          <div><dt>Edges</dt><dd id="meta-edges">-</dd></div>
-        </dl>
-      </section>
-
-      <section class="panel">
-        <h2>What You’re Seeing</h2>
-        <p>Each card is a tensor node. Edges point from parent tensors into tensors produced by operations.</p>
-        <p>Small tensors show full values. Larger tensors show a compact preview plus summary stats.</p>
-      </section>
-    </aside>
-
-    <main class="workspace">
-      <div id="status-banner" class="status-banner">Loading graph...</div>
-      <div id="graph-stage" class="graph-stage">
-        <svg id="edge-layer"></svg>
-        <div id="node-layer"></div>
-      </div>
-    </main>
-  </div>
+    <div id="graph-stage" class="graph-stage">
+      <svg id="edge-layer"></svg>
+      <div id="node-layer"></div>
+    </div>
+  </main>
 
   <script src="/static/graph.js"></script>
 </body>

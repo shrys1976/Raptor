@@ -1,9 +1,6 @@
 const statusBanner = document.getElementById("status-banner");
 const nodeLayer = document.getElementById("node-layer");
 const edgeLayer = document.getElementById("edge-layer");
-const refreshBtn = document.getElementById("refresh-btn");
-const demoButtons = document.querySelectorAll(".demo-btn");
-
 const metaName = document.getElementById("meta-name");
 const metaNodes = document.getElementById("meta-nodes");
 const metaEdges = document.getElementById("meta-edges");
@@ -75,10 +72,10 @@ function layoutNodes(nodes, edges) {
   });
 
   const positions = new Map();
-  const columnGap = 320;
-  const rowGap = 260;
-  const startX = 60;
-  const startY = 60;
+  const columnGap = 230;
+  const rowGap = 185;
+  const startX = 22;
+  const startY = 22;
 
   Array.from(columns.keys())
     .sort((a, b) => a - b)
@@ -108,8 +105,8 @@ function renderGraph(graph) {
 
   graph.nodes.forEach((node) => {
     const pos = positions.get(node.id);
-    maxX = Math.max(maxX, pos.x + 320);
-    maxY = Math.max(maxY, pos.y + 260);
+    maxX = Math.max(maxX, pos.x + 230);
+    maxY = Math.max(maxY, pos.y + 190);
 
     const el = document.createElement("article");
     el.className = `graph-node ${node.requires_grad ? "requires-grad" : ""}`;
@@ -144,10 +141,10 @@ function renderGraph(graph) {
       return;
     }
 
-    const x1 = source.x + 240;
-    const y1 = source.y + 120;
+    const x1 = source.x + 182;
+    const y1 = source.y + 78;
     const x2 = target.x;
-    const y2 = target.y + 120;
+    const y2 = target.y + 78;
     const midX = (x1 + x2) / 2;
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -186,25 +183,5 @@ async function loadGraph() {
     setStatus(`Could not load graph: ${error.message}`);
   }
 }
-
-async function loadDemo(name) {
-  setStatus(`Loading demo: ${name}...`);
-  try {
-    const response = await fetch(`/api/demo/${name}`, { method: "POST" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const graph = await response.json();
-    renderGraph(graph);
-    setStatus(`Loaded demo "${name}".`);
-  } catch (error) {
-    setStatus(`Could not load demo "${name}": ${error.message}`);
-  }
-}
-
-refreshBtn.addEventListener("click", loadGraph);
-demoButtons.forEach((button) => {
-  button.addEventListener("click", () => loadDemo(button.dataset.demo));
-});
 
 loadGraph();
