@@ -26,7 +26,6 @@ class Module:
 
 
 # clears old accumulating gradients before running backward pass
-
     def zero_grad(self):
             for p in  self.parameters():
                 p.grad =np.zeros_like(p.data, dtype = np.float32)
@@ -87,4 +86,36 @@ class Sequential(Module):
             x = layer(x)
         return x    
 
+class MSELoss(Module):
+    def forward(self, pred, target):
+        diff = pred - target
+        return (diff*diff).mean # mean sqaured error
 
+
+class CrossEntropyLoss(Module):
+    def forward(self, logits, target):
+        shifted = logits.data - np.max(logits.data , axis = 1,keepdims = True)# subtract row max from eaxh row
+        exp_shifted = np.exp(shifted)
+        probs = exp_shifted / exp_shifted.sum(axis=1, keepdims = True)# calc softmax probs  
+
+
+        batch_size = logits.data.shape[0]
+        loss_data= -np.log(probs[np.arrange(batch_size),target])
+
+        out=  Tensor( 
+            loss_data.mean(),
+            (logits,),
+            "cross_entropy",
+            logits.requires_grad,
+        
+        )
+
+        def _backward():
+            if logits.requires_grad:
+                grad = probs.copy()
+                grad[np.arrange(batch_size),target] -=1.0
+                grad =grad/batch_size
+                logits.grad += grad*out.grad
+
+        out._backward = _backward
+        return out                
