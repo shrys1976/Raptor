@@ -12,4 +12,7 @@ wheels/
 .cursor
 plan.md
 data/
-assets/
+assets/*
+!assets/
+!assets/raptor-banner.jpg
+!assets/ss.png
