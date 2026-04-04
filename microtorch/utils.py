@@ -10,7 +10,7 @@ from pathlib import Path
 def batch_iterator(X,y,batch_size=32, shuffle=True):
     n = len(X)
 
-    indices = np.arrange(n)
+    indices = np.arange(n)
     if shuffle:
         np.random.shuffle(indices)
 

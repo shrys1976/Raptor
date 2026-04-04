@@ -94,28 +94,39 @@ class MSELoss(Module):
 
 class CrossEntropyLoss(Module):
     def forward(self, logits, target):
-        shifted = logits.data - np.max(logits.data , axis = 1,keepdims = True)# subtract row max from eaxh row
+        logits_data = logits.data
+
+        if logits_data.ndim == 1:
+            logits_data = logits_data.reshape(1, -1)
+
+        target = np.array(target)
+        if target.ndim == 0:
+            target = target.reshape(1)
+
+        shifted = logits_data - np.max(logits_data, axis=1, keepdims=True)
         exp_shifted = np.exp(shifted)
-        probs = exp_shifted / exp_shifted.sum(axis=1, keepdims = True)# calc softmax probs  
+        probs = exp_shifted / exp_shifted.sum(axis=1, keepdims=True)
 
+        batch_size = logits_data.shape[0]
+        loss_data = -np.log(probs[np.arange(batch_size), target])
 
-        batch_size = logits.data.shape[0]
-        loss_data= -np.log(probs[np.arange(batch_size),target])
-
-        out=  Tensor( 
+        out = Tensor(
             loss_data.mean(),
             (logits,),
             "cross_entropy",
             logits.requires_grad,
-        
         )
 
         def _backward():
             if logits.requires_grad:
                 grad = probs.copy()
-                grad[np.arange(batch_size),target] -=1.0
-                grad =grad/batch_size
-                logits.grad += grad* out.grad
+                grad[np.arange(batch_size), target] -= 1.0
+                grad = grad / batch_size
+
+                if logits.data.ndim == 1:
+                    grad = grad.reshape(logits.data.shape)
+
+                logits.grad += grad * out.grad
 
         out._backward = _backward
-        return out                
+        return out
