@@ -16,6 +16,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 tracer = GraphTracer()
 _graph_lock = Lock()
 _current_graph = None
+_saved_graphs = {}
 
 
 def _set_graph(graph):
@@ -29,8 +30,57 @@ def get_current_graph():
         return _current_graph
 
 
-def set_current_tensor(output_tensor, name="custom"):
+def _save_graph(graph_id, graph):
+    with _graph_lock:
+        _saved_graphs[graph_id] = graph
+
+
+def list_graphs():
+    with _graph_lock:
+        current_id = None if _current_graph is None else _current_graph.get("graph_id")
+        saved_graph_ids = list(_saved_graphs.keys())
+
+    graphs = []
+
+    for demo_name in sorted(DEMO_BUILDERS.keys()):
+        graph_id = f"demo:{demo_name}"
+        graphs.append(
+            {
+                "id": graph_id,
+                "label": demo_name,
+                "type": "demo",
+                "current": graph_id == current_id,
+            }
+        )
+
+    for graph_id in saved_graph_ids:
+        if graph_id.startswith("demo:"):
+            continue
+        if graph_id.startswith("custom:"):
+            label = graph_id.split(":", 1)[1]
+        else:
+            label = graph_id
+
+        graphs.append(
+            {
+                "id": graph_id,
+                "label": label,
+                "type": "custom",
+                "current": graph_id == current_id,
+            }
+        )
+
+    graphs.sort(key=lambda item: (item["type"] != "demo", item["label"]))
+    return graphs
+
+
+def set_current_tensor(output_tensor, name="custom", persist=True):
     graph = tracer.trace(output_tensor, name=name)
+    graph_id = f"custom:{name}"
+    graph["graph_id"] = graph_id
+    graph["graph_type"] = "custom"
+    if persist:
+        _save_graph(graph_id, graph)
     _set_graph(graph)
     return graph
 
@@ -88,7 +138,28 @@ def load_demo(name):
     builder = DEMO_BUILDERS.get(name)
     if builder is None:
         raise KeyError(name)
-    return set_current_tensor(builder(), name=f"demo:{name}")
+    graph = tracer.trace(builder(), name=f"demo:{name}")
+    graph_id = f"demo:{name}"
+    graph["graph_id"] = graph_id
+    graph["graph_type"] = "demo"
+    _save_graph(graph_id, graph)
+    _set_graph(graph)
+    return graph
+
+
+def activate_graph(graph_id):
+    if graph_id.startswith("demo:"):
+        demo_name = graph_id.split(":", 1)[1]
+        return load_demo(demo_name)
+
+    with _graph_lock:
+        graph = _saved_graphs.get(graph_id)
+
+    if graph is None:
+        raise KeyError(graph_id)
+
+    _set_graph(graph)
+    return graph
 
 
 app = FastAPI(title="RaptorGraph")
@@ -114,9 +185,9 @@ def api_graph():
     return graph
 
 
-@app.get("/api/demos")
-def api_demos():
-    return {"demos": sorted(DEMO_BUILDERS.keys())}
+@app.get("/api/graphs")
+def api_graphs():
+    return {"graphs": list_graphs()}
 
 
 @app.post("/api/demo/{name}")
@@ -125,4 +196,13 @@ def api_load_demo(name: str):
         graph = load_demo(name)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=f"Unknown demo: {name}") from exc
+    return graph
+
+
+@app.post("/api/graph/{graph_id:path}")
+def api_activate_graph(graph_id: str):
+    try:
+        graph = activate_graph(graph_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Unknown graph: {graph_id}") from exc
     return graph

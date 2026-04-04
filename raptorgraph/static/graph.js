@@ -5,6 +5,7 @@ const metaName = document.getElementById("meta-name");
 const metaNodes = document.getElementById("meta-nodes");
 const metaEdges = document.getElementById("meta-edges");
 const graphPicker = document.getElementById("graph-picker");
+let graphPickerInitialized = false;
 
 function setStatus(text) {
   statusBanner.textContent = text;
@@ -94,6 +95,9 @@ function renderGraph(graph) {
   metaName.textContent = graph.name || "-";
   metaNodes.textContent = String(graph.node_count ?? graph.nodes.length);
   metaEdges.textContent = String(graph.edge_count ?? graph.edges.length);
+  if (graph.graph_id) {
+    graphPicker.value = graph.graph_id;
+  }
 
   let maxX = 800;
   let maxY = 600;
@@ -191,6 +195,7 @@ async function loadGraph() {
       throw new Error(`HTTP ${response.status}`);
     }
     const graph = await response.json();
+    await initGraphPicker();
     renderGraph(graph);
     setStatus(`Loaded ${graph.name} with ${graph.node_count} nodes.`);
   } catch (error) {
@@ -213,27 +218,51 @@ async function loadDemo(name) {
   }
 }
 
+async function loadNamedGraph(graphId) {
+  setStatus(`Loading ${graphId}...`);
+  try {
+    const response = await fetch(`/api/graph/${encodeURIComponent(graphId)}`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const graph = await response.json();
+    renderGraph(graph);
+    setStatus(`Loaded ${graph.name} with ${graph.node_count} nodes.`);
+  } catch (error) {
+    setStatus(`Could not load graph: ${error.message}`);
+  }
+}
+
 async function initGraphPicker() {
   try {
-    const response = await fetch("/api/demos");
+    const response = await fetch("/api/graphs");
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const payload = await response.json();
     graphPicker.innerHTML = "";
 
-    payload.demos.forEach((name) => {
+    payload.graphs.forEach((graphInfo) => {
       const option = document.createElement("option");
-      option.value = name;
-      option.textContent = name;
+      option.value = graphInfo.id;
+      option.textContent =
+        graphInfo.type === "custom"
+          ? `custom:${graphInfo.label}`
+          : graphInfo.label;
+      option.selected = Boolean(graphInfo.current);
       graphPicker.appendChild(option);
     });
 
-    graphPicker.addEventListener("change", (event) => {
-      loadDemo(event.target.value);
-    });
+    if (!graphPickerInitialized) {
+      graphPicker.addEventListener("change", (event) => {
+        loadNamedGraph(event.target.value);
+      });
+      graphPickerInitialized = true;
+    }
   } catch (error) {
-    setStatus(`Could not load demos: ${error.message}`);
+    setStatus(`Could not load graphs: ${error.message}`);
   }
 }
 
