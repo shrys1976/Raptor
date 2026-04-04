@@ -6,11 +6,18 @@ import numpy as np
 
 from raptor import Tensor, nn
 from raptor.optim import Adam
-from raptor.utils import evaluate_classifier, load_mnist
+from raptor.utils import (
+    evaluate_classifier,
+    load_mnist,
+    save_comparison_curves,
+    save_history_csv,
+    save_history_json,
+)
 
 
 MODEL_DIMS = [(784, 128), (128, 64), (64, 10)]
 RESULTS_PATH = Path("benchmarks/results/compare_results.json")
+CURVES_DIR = Path("benchmarks/results/curves")
 
 
 def make_raptor_model():
@@ -316,6 +323,24 @@ def run_benchmark(
 
     RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
     RESULTS_PATH.write_text(json.dumps(results, indent=2))
+
+    save_history_json(micro_runs[0], CURVES_DIR / "raptor_first_run.json")
+    save_history_csv(micro_runs[0], CURVES_DIR / "raptor_first_run.csv")
+    save_history_json(torch_runs[0], CURVES_DIR / "pytorch_first_run.json")
+    save_history_csv(torch_runs[0], CURVES_DIR / "pytorch_first_run.csv")
+
+    try:
+        save_comparison_curves(
+            {
+                "Raptor": micro_runs[0],
+                "PyTorch": torch_runs[0],
+            },
+            CURVES_DIR / "raptor_vs_pytorch.png",
+            title="Raptor vs PyTorch",
+        )
+    except ModuleNotFoundError as exc:
+        print(exc)
+
     return results
 
 
@@ -326,3 +351,4 @@ if __name__ == "__main__":
     print("Raptor:", results["raptor"]["summary"])
     print("PyTorch:   ", results["pytorch"]["summary"])
     print(f"Saved results to {RESULTS_PATH}")
+    print(f"Saved first-run histories under {CURVES_DIR}")
