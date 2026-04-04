@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="assets/raptor-banner.jpg" alt="Raptor banner" width="100%" />
-</p>
+![Raptor banner](./assets/raptor-banner.jpg)
 
 # Raptor
 
@@ -310,9 +308,7 @@ http://127.0.0.1:8000
 
 ### Interface
 
-<p align="center">
-  <img src="assets/ss.png" alt="RaptorGraph frontend screenshot" width="100%" />
-</p>
+![RaptorGraph frontend screenshot](./assets/ss.png)
 
 ### Built-in graph demos
 
