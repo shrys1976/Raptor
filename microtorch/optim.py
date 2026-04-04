@@ -22,7 +22,8 @@ class SGD(Optimizer):
         self.weight_decay = weight_decay
         self.velocity = [np.zeros_like(p.data, dtype = np.float32)for p in self.params]
 
-
+# velocity -> memory of recent gradnient directins
+# momentum -> controls how strongly memory influences the next step
     def step(self):
         for i, p in enumerate(self.params):
             grad= p.grad
