@@ -1,4 +1,6 @@
-![Raptor banner](./assets/raptor-banner.jpg)
+<p align="center">
+  <img src="./assets/raptor-banner.jpg" alt="Raptor banner" width="75%" />
+</p>
 
 # Raptor
 
